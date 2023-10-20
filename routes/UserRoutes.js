@@ -3,6 +3,7 @@ const userRouter = express.Router();
 const UserModel = require("../model/UserModel");
 const jwt = require("jsonwebtoken");
 const bcrypt = require("bcrypt");
+const BlacklistModel = require("../model/BlackListModel");
 
 userRouter.post("/register", async (req, res) => {
   const { name, email, pass } = req.body;
@@ -15,11 +16,11 @@ userRouter.post("/register", async (req, res) => {
         });
       } else {
         const user = await UserModel.create({ ...req.body, pass: hash });
-        res.send({ msg: "new user has been added", user });
+        res.status(200).send({ msg: "new user has been added", user });
       }
     });
   } catch (error) {
-    res.send({
+    res.status(500).send({
       msg: "Unable to Sign up, Please try again",
       error: error.message,
     });
@@ -39,17 +40,29 @@ userRouter.post("/login", async (req, res) => {
             { userId: user[0]._id, userName: user[0].name },
             "secret3"
           );
-          res.send({ msg: "Logged in", token: token });
+          res.status(200).send({ msg: "Logged in", token: token });
         }
       });
     } else {
       res.send({ msg: "wrong credentials" });
     }
   } catch (error) {
-    res.send({
+    res.status(500).send({
       msg: "Unable to Sign in, Please try again",
       error: error.message,
     });
+  }
+});
+
+userRouter.get("/logout", async (req, res) => {
+  try {
+    const token = req.headers.authorization?.split(" ")[1] || null;
+    if (token) {
+      await BlacklistModel.updateMany({}, { $push: { blacklist: [token] } });
+      res.status(200).send({ msg: "Logged out Successfully!!" });
+    }
+  } catch (error) {
+    res.status(500).send({ error: error.message });
   }
 });
 

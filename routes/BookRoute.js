@@ -3,7 +3,10 @@ const BookModel = require("../model/BookModel");
 const bookRouter = express.Router();
 
 bookRouter.get("/search", async (req, res) => {
-  const { title, author } = req.query;
+  const { title, author, page } = req.query;
+
+  const currentPage = +page || 1;
+  const booksPerPage = 6;
 
   try {
     let query = {};
@@ -15,8 +18,19 @@ bookRouter.get("/search", async (req, res) => {
       query.author = { $regex: new RegExp(author, "i") };
     }
 
-    const books = await BookModel.find(query);
-    res.status(200).send({ msg: "Found books results", books });
+    const total = await BookModel.countDocuments(query);
+
+    const books = await BookModel.find(query)
+      .skip((currentPage - 1) * booksPerPage)
+      .limit(booksPerPage);
+
+    res.status(200).send({
+      msg: "Found books results",
+      books: books,
+      totalBooks: total,
+      page: currentPage,
+      totalPages: Math.ceil(total / booksPerPage),
+    });
   } catch (error) {
     res
       .status(500)
@@ -34,12 +48,13 @@ bookRouter.get("/book/:id", async (req, res) => {
     res.status(400).send({ msg: "oops cannot get the book" });
   }
 });
+
 //create
 bookRouter.post("/add", async (req, res) => {
   const payload = req.body;
 
   if (!isValidISBN(payload.isbn)) {
-    return res.status(400).send({ msg: "Invalid ISBN." });
+    return res.status(400).send({ msg: "Invalid ISBN!!" });
   }
 
   try {
@@ -55,7 +70,6 @@ bookRouter.post("/add", async (req, res) => {
 });
 
 //update by put
-
 bookRouter.put("/update/:id", async (req, res) => {
   const payload = req.body;
 
