@@ -24,7 +24,7 @@ bookRouter.get("/search", async (req, res) => {
       .skip((currentPage - 1) * booksPerPage)
       .limit(booksPerPage);
 
-    if (books) {
+    if (books.length > 0) {
       res.status(200).send({
         msg: "Found books results",
         books: books,
