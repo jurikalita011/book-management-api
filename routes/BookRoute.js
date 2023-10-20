@@ -24,13 +24,19 @@ bookRouter.get("/search", async (req, res) => {
       .skip((currentPage - 1) * booksPerPage)
       .limit(booksPerPage);
 
-    res.status(200).send({
-      msg: "Found books results",
-      books: books,
-      totalBooks: total,
-      page: currentPage,
-      totalPages: Math.ceil(total / booksPerPage),
-    });
+    if (books) {
+      res.status(200).send({
+        msg: "Found books results",
+        books: books,
+        totalBooks: total,
+        page: currentPage,
+        totalPages: Math.ceil(total / booksPerPage),
+      });
+    } else {
+      res
+        .status(200)
+        .send({ msg: "No more book found,More books to be added soon!" });
+    }
   } catch (error) {
     res
       .status(500)
